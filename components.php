@@ -61,12 +61,13 @@ function get_stylesheet_dir() {
  */
 function get_components() {
 	$template_components   = glob( get_template_dir() . get_components_directory() . '/**/component.php' );
-	$stylesheet_components = glob( get_stylesheet_dir() . get_components_directory() . '/**/component.php' );
+	$stylesheet_components = get_stylesheet_dir() !== get_template_dir() ? glob( get_stylesheet_dir() . get_components_directory() . '/**/component.php' ) : array();
 	$components            = array_merge( $template_components, $stylesheet_components );
 	return array_map(
 		function( $val ) {
 			$data             = get_component_data( $val );
 			$data['filepath'] = $val;
+			$data['name']     = ltrim( str_replace( '-', ' ', strstr( $data['package'], '\\' ) ), '\\' );
 			return $data;
 		},
 		$components
@@ -123,8 +124,11 @@ function get_component_data( $file ) {
 
 	// Set our headers.
 	$headers = array(
-		'author'  => 'Author',
-		'version' => 'Version',
+		'author'      => '@author',
+		'version'     => '@version',
+		'package'     => '@package',
+		'repository'  => '@link',
+		'description' => '*',
 	);
 
 	foreach ( $headers as $field => $regex ) {
@@ -136,4 +140,100 @@ function get_component_data( $file ) {
 	}
 
 	return $headers;
+}
+
+/**
+ * Register the admin page to view the list of components
+ *
+ * @since 0.1.0
+ */
+function register_admin_page() {
+	add_theme_page( 'Components', 'Components', 'manage_options', 'components', __NAMESPACE__ . '\\render_admin_page' );
+}
+
+add_action( 'admin_menu', __NAMESPACE__ . '\\register_admin_page' );
+
+/**
+ * Render the admin page to view the list of components
+ *
+ * @since 0.1.0
+ */
+function render_admin_page() {
+	$components = get_components();
+	?>
+	<div class="wrap">
+		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+		<table class="wp-list-table widefat components">
+			<thead>
+				<tr>
+					<th scope="col" id="name" class="manage-column column-name column-primary">Component</th>
+					<th scope="col" id="description" class="manage-column column-description">Details</th>
+				</tr>
+			</thead>
+
+			<tbody id="the-list">
+				<?php
+				if ( ! empty( $components ) ) {
+					foreach ( $components as $component ) {
+						extract( $component );
+						$edit_path = str_replace( get_template_dir(), '', $filepath );
+						$rel_path  = str_replace( get_theme_root(), '', $filepath );
+						$theme     = str_replace( '/', '', str_replace( $edit_path, '', $rel_path ) );
+						$edit_url  = \add_query_arg(
+							array(
+								'file'  => rawurlencode( $edit_path ),
+								'theme' => $theme,
+							),
+							\admin_url( 'theme-editor.php' )
+						);
+						?>
+						<tr>
+							<td class="component-title column-primary">
+								<strong><?php echo esc_html( $name ); ?></strong>
+								<?php
+								if ( ! empty( $version ) || ! empty( $author ) ) {
+									printf(
+										'<p>%1$s%2$s%3$s</p>',
+										\current_user_can( 'edit_plugins' ) ? '<a href="' . \esc_url( $edit_url ) . '">Edit</a>' : '',
+										! empty( $repository ) && ! empty( $author ) ? ' | ' : '',
+										! empty( $repository ) ? '<a href="' . \esc_url( $repository ) . '" target="_blank">Repository</a>' : ''
+									);
+								}
+								?>
+							</td>
+							<td class="column-description desc">
+								<?php
+								if ( ! empty( $description ) ) {
+									printf(
+										'<p>%1$s</p>',
+										esc_html( $description )
+									);
+								}
+								if ( ! empty( $version ) || ! empty( $author ) ) {
+									printf(
+										'<p>%1$s%2$s%3$s</p>',
+										! empty( $version ) ? 'Version ' . \esc_html( $version ) : '',
+										! empty( $version ) && ! empty( $author ) ? ' | ' : '',
+										! empty( $author ) ? 'by ' . \esc_html( $author ) : ''
+									);
+								}
+								?>
+							</td>
+						</tr>
+						<?php
+					}
+				}
+				?>
+			</tbody>
+
+			<tfoot>
+				<tr>
+					<th scope="col" class="manage-column column-name column-primary">Component</th>
+					<th scope="col" class="manage-column column-description">Details</th>
+				</tr>
+			</tfoot>
+
+		</table>
+	</div>
+	<?php
 }
