@@ -175,9 +175,8 @@ function render_admin_page() {
 				<?php
 				if ( ! empty( $components ) ) {
 					foreach ( $components as $component ) {
-						extract( $component );
-						$edit_path = str_replace( get_template_dir(), '', $filepath );
-						$rel_path  = str_replace( get_theme_root(), '', $filepath );
+						$edit_path = str_replace( get_template_dir(), '', $component['filepath'] );
+						$rel_path  = str_replace( get_theme_root(), '', $component['filepath'] );
 						$theme     = str_replace( '/', '', str_replace( $edit_path, '', $rel_path ) );
 						$edit_url  = \add_query_arg(
 							array(
@@ -186,36 +185,58 @@ function render_admin_page() {
 							),
 							\admin_url( 'theme-editor.php' )
 						);
+						$actions   = array();
+						$meta      = array();
+						if ( \current_user_can( 'edit_plugins' ) ) {
+							$actions['edit'] = array(
+								'link'  => $edit_url,
+								'label' => 'Edit',
+							);
+						}
+						if ( ! empty( $component['repository'] ) ) {
+							$actions['repository'] = array(
+								'link'  => $component['repository'],
+								'label' => 'Repository',
+							);
+						}
+						if ( ! empty( $component['version'] ) ) {
+							$meta['version'] = array(
+								'label' => 'Version ' . $component['version'],
+							);
+						}
+						if ( ! empty( $component['author'] ) ) {
+							$meta['author'] = array(
+								'label' => 'by ' . $component['author'],
+							);
+						}
 						?>
 						<tr>
 							<td class="component-title column-primary">
-								<strong><?php echo esc_html( $name ); ?></strong>
+								<strong><?php echo esc_html( $component['name'] ); ?></strong>
 								<?php
-								if ( ! empty( $version ) || ! empty( $author ) ) {
-									printf(
-										'<p>%1$s%2$s%3$s</p>',
-										\current_user_can( 'edit_plugins' ) ? '<a href="' . \esc_url( $edit_url ) . '">Edit</a>' : '',
-										! empty( $repository ) && ! empty( $author ) ? ' | ' : '',
-										! empty( $repository ) ? '<a href="' . \esc_url( $repository ) . '" target="_blank">Repository</a>' : ''
-									);
+								if ( ! empty( $actions ) ) {
+									?>
+									<p class="row-actions visible">
+										<?php render_array_of_links( $actions ); ?>
+									</p>
+									<?php
 								}
 								?>
 							</td>
 							<td class="column-description desc">
 								<?php
-								if ( ! empty( $description ) ) {
+								if ( ! empty( $component['description'] ) ) {
 									printf(
 										'<p>%1$s</p>',
-										esc_html( $description )
+										esc_html( $component['description'] )
 									);
 								}
-								if ( ! empty( $version ) || ! empty( $author ) ) {
-									printf(
-										'<p>%1$s%2$s%3$s</p>',
-										! empty( $version ) ? 'Version ' . \esc_html( $version ) : '',
-										! empty( $version ) && ! empty( $author ) ? ' | ' : '',
-										! empty( $author ) ? 'by ' . \esc_html( $author ) : ''
-									);
+								if ( ! empty( $meta ) ) {
+									?>
+									<p class="row-actions visible">
+										<?php render_array_of_links( $meta ); ?>
+									</p>
+									<?php
 								}
 								?>
 							</td>
@@ -236,4 +257,32 @@ function render_admin_page() {
 		</table>
 	</div>
 	<?php
+}
+
+/**
+ * Render an array of links
+ *
+ * For use in the admin list of components
+ *
+ * @since 0.1.0
+ * @param array $links Array of links to render.
+ */
+function render_array_of_links( $links ) {
+	$i = 1;
+	$c = count( $links );
+	foreach ( $links as $key => $link ) {
+		if ( isset( $link['link'] ) ) {
+			?>
+			<a href="<?php echo esc_url( $link['link'] ); ?>"><?php echo esc_html( $link['label'] ); ?></a>
+				<?php
+		} else {
+			?>
+			<span><?php echo esc_html( $link['label'] ); ?></span>
+			<?php
+		}
+		if ( $i < $c ) {
+			echo ' | ';
+		}
+		$i++;
+	}
 }
