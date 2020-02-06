@@ -67,7 +67,8 @@ function get_components() {
 		function( $val ) {
 			$data             = get_component_data( $val );
 			$data['filepath'] = $val;
-			$data['name']     = ltrim( str_replace( '-', ' ', strstr( $data['package'], '\\' ) ), '\\' );
+			$name             = ucwords( ltrim( str_replace( '-', ' ', $data['subpackage'] ), '\\' ) );
+			$data['name']     = ! empty( $name ) ? $name : ltrim( str_replace( get_template_dir() . get_components_directory(), '', $val ), '/' );
 			return $data;
 		},
 		$components
@@ -129,6 +130,7 @@ function get_component_data( $file ) {
 		'package'     => '@package',
 		'repository'  => '@link',
 		'description' => '*',
+		'subpackage'  => '@subpackage',
 	);
 
 	foreach ( $headers as $field => $regex ) {
@@ -259,14 +261,6 @@ function render_admin_page() {
 	<?php
 }
 
-/**
- * Render an array of links
- *
- * For use in the admin list of components
- *
- * @since 0.1.0
- * @param array $links Array of links to render.
- */
 function render_array_of_links( $links ) {
 	$i = 1;
 	$c = count( $links );
