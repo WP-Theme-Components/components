@@ -88,7 +88,7 @@ function require_components() {
 		}
 	}
 }
-add_action( 'after_setup_theme', __NAMESPACE__ . '\\require_components' );
+add_action( 'after_setup_theme', __NAMESPACE__ . '\\require_components', -999 );
 
 /**
  * Create a components directory if one doesn't exist
@@ -100,7 +100,7 @@ function create_components_directory() {
 		mkdir( get_stylesheet_dir() . get_components_directory() );
 	}
 }
-add_action( 'after_setup_theme', __NAMESPACE__ . '\\create_components_directory' );
+add_action( 'after_setup_theme', __NAMESPACE__ . '\\create_components_directory', -999 );
 
 /**
  * Get the component file headers
@@ -261,6 +261,11 @@ function render_admin_page() {
 	<?php
 }
 
+/**
+ * Render an array of links
+ *
+ * @param array $links Array of links.
+ */
 function render_array_of_links( $links ) {
 	$i = 1;
 	$c = count( $links );
