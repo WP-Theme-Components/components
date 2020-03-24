@@ -67,7 +67,8 @@ function get_components() {
 		function( $val ) {
 			$data             = get_component_data( $val );
 			$data['filepath'] = $val;
-			$data['name']     = ltrim( str_replace( '-', ' ', strstr( $data['package'], '\\' ) ), '\\' );
+			$name             = ucwords( ltrim( str_replace( '-', ' ', $data['subpackage'] ), '\\' ) );
+			$data['name']     = ! empty( $name ) ? $name : ltrim( str_replace( get_template_dir() . get_components_directory(), '', $val ), '/' );
 			return $data;
 		},
 		$components
@@ -87,7 +88,7 @@ function require_components() {
 		}
 	}
 }
-add_action( 'after_setup_theme', __NAMESPACE__ . '\\require_components' );
+add_action( 'after_setup_theme', __NAMESPACE__ . '\\require_components', -999 );
 
 /**
  * Create a components directory if one doesn't exist
@@ -99,7 +100,7 @@ function create_components_directory() {
 		mkdir( get_stylesheet_dir() . get_components_directory() );
 	}
 }
-add_action( 'after_setup_theme', __NAMESPACE__ . '\\create_components_directory' );
+add_action( 'after_setup_theme', __NAMESPACE__ . '\\create_components_directory', -999 );
 
 /**
  * Get the component file headers
@@ -129,6 +130,7 @@ function get_component_data( $file ) {
 		'package'     => '@package',
 		'repository'  => '@link',
 		'description' => '*',
+		'subpackage'  => '@subpackage',
 	);
 
 	foreach ( $headers as $field => $regex ) {
@@ -262,10 +264,7 @@ function render_admin_page() {
 /**
  * Render an array of links
  *
- * For use in the admin list of components
- *
- * @since 0.1.0
- * @param array $links Array of links to render.
+ * @param array $links Array of links.
  */
 function render_array_of_links( $links ) {
 	$i = 1;
@@ -285,4 +284,20 @@ function render_array_of_links( $links ) {
 		}
 		$i++;
 	}
+}
+
+/**
+ * Get the URL of the component directory.
+ *
+ * Useful for getting stylesheets, scripts, images and other static assets. Effectively A URL version of __FILE__
+ *
+ * @since 1.0.0
+ * @param string $file __FILE__ magic constant.
+ * @return string
+ */
+function get_component_url( $file ) {
+	$path = str_replace( wp_normalize_path( ABSPATH ), '', wp_normalize_path( $file ) );
+	$path = ltrim( $path, '/' );
+	$path = rtrim( $path, 'component.php' );
+	return trailingslashit( site_url() ) . $path;
 }
