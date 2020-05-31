@@ -4,7 +4,7 @@
  *
  * @package WP-Theme-Components\components
  * @author Cameron Jones
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 namespace WP_Theme_Components;
@@ -264,6 +264,7 @@ function render_admin_page() {
 /**
  * Render an array of links
  *
+ * @since 0.1.0
  * @param array $links Array of links.
  */
 function render_array_of_links( $links ) {
@@ -291,7 +292,7 @@ function render_array_of_links( $links ) {
  *
  * Useful for getting stylesheets, scripts, images and other static assets. Effectively A URL version of __FILE__
  *
- * @since 1.0.0
+ * @since 0.2.0
  * @param string $file __FILE__ magic constant.
  * @return string
  */
